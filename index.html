@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pages of Peace | Mental Health Sentiment Tracker</title>
+    <title>Pages of Peace | Mental Health Journal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,9 +18,8 @@
                 </div>
                 <div class="nav-links">
                     <a href="#" class="nav-link" data-page="home">Home</a>
-                    <a href="#" class="nav-link" data-page="dashboard">Dashboard</a>
-                    <a href="#" class="nav-link" data-page="journal">Journal</a>
-                    <a href="#" class="nav-link" data-page="visualization">Insights</a>
+                    <a href="#" class="nav-link" data-page="journal">My Journal</a>
+                    <a href="#" class="nav-link" data-page="support">Get Support</a>
                     <a href="#" class="nav-link" data-page="settings">Settings</a>
                 </div>
                 <div class="auth-buttons">
@@ -40,8 +39,8 @@
         <section id="home" class="page active">
             <div class="container">
                 <div class="hero">
-                    <h1>Welcome to Pages of Peace</h1>
-                    <p>A safe space to track your emotions, understand your patterns, and find clarity in your mental health journey.</p>
+                    <h1>Welcome to Your Peaceful Space</h1>
+                    <p>A simple, private journal to track your daily feelings and find moments of calm.</p>
                     <div class="hero-btns">
                         <button class="btn btn-primary" id="startJournaling">Start Journaling</button>
                         <button class="btn btn-secondary" id="learnMore">Learn More</button>
@@ -51,59 +50,18 @@
                 <div class="features">
                     <div class="feature-card">
                         <i class="fas fa-book-open"></i>
-                        <h3>Daily Journaling</h3>
-                        <p>Express your thoughts in a safe, private space with our soothing writing environment.</p>
+                        <h3>Simple Journaling</h3>
+                        <p>Just write how you feel. No pressure, no analysis, just your thoughts.</p>
                     </div>
                     <div class="feature-card">
-                        <i class="fas fa-chart-line"></i>
-                        <h3>Sentiment Tracking</h3>
-                        <p>Visualize your emotional patterns over time with beautiful, easy-to-understand charts.</p>
+                        <i class="fas fa-calendar-day"></i>
+                        <h3>Daily Check-ins</h3>
+                        <p>Quick daily entries to track your emotional journey over time.</p>
                     </div>
                     <div class="feature-card">
-                        <i class="fas fa-shield-alt"></i>
-                        <h3>Privacy First</h3>
-                        <p>Your data is always secure and private. You control what you share.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Dashboard Page -->
-        <section id="dashboard" class="page">
-            <div class="container">
-                <div class="dashboard-header">
-                    <h2>Your Emotional Dashboard</h2>
-                    <button class="btn btn-primary" id="newEntryBtn">
-                        <i class="fas fa-plus"></i> New Entry
-                    </button>
-                </div>
-                
-                <div class="summary-cards">
-                    <div class="summary-card">
-                        <h3>Current Mood</h3>
-                        <p id="currentMood">Calm</p>
-                        <span id="moodEmoji">😊</span>
-                    </div>
-                    <div class="summary-card">
-                        <h3>This Week's Average</h3>
-                        <p id="weekAverage">7.2/10</p>
-                        <span>+0.5 from last week</span>
-                    </div>
-                    <div class="summary-card">
-                        <h3>Most Frequent Emotion</h3>
-                        <p id="frequentEmotion">Content</p>
-                        <span>Appeared 4 times this month</span>
-                    </div>
-                </div>
-                
-                <div class="charts-container">
-                    <div class="chart-card">
-                        <h3>Weekly Mood Trend</h3>
-                        <canvas id="moodChart"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <h3>Emotion Distribution</h3>
-                        <canvas id="emotionChart"></canvas>
+                        <i class="fas fa-hands-helping"></i>
+                        <h3>Support When Needed</h3>
+                        <p>Easy access to resources if you need to talk to someone.</p>
                     </div>
                 </div>
             </div>
@@ -114,54 +72,160 @@
             <div class="container">
                 <div class="journal-container">
                     <div class="journal-header">
-                        <h2>How are you feeling today?</h2>
-                        <p>Take a moment to reflect and write about your thoughts and emotions.</p>
+                        <h2>My Journal</h2>
+                        <p>How are you feeling today? Just write it down.</p>
                     </div>
                     
-                    <textarea class="journal-textarea" placeholder="Express your thoughts here... Today I feel..."></textarea>
-                    
-                    <div class="journal-actions">
-                        <button class="btn btn-primary" id="analyzeBtn">Analyze Sentiment</button>
+                    <div class="date-selector">
+                        <button class="btn btn-secondary" id="prevDate">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h3 id="currentDate">Today</h3>
+                        <button class="btn btn-secondary" id="nextDate">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
                     
-                    <div id="sentimentResult" class="sentiment-result">
-                        <!-- Sentiment analysis result will appear here -->
+                    <div class="journal-entry">
+                        <textarea class="journal-textarea" placeholder="How are you feeling today? Just write what's on your mind..."></textarea>
+                        
+                        <div class="mood-selector">
+                            <p>How would you describe your mood today?</p>
+                            <div class="mood-options">
+                                <button class="mood-option" data-mood="amazing">
+                                    <i class="fas fa-grin-stars"></i>
+                                    <span>Amazing</span>
+                                </button>
+                                <button class="mood-option" data-mood="good">
+                                    <i class="fas fa-smile"></i>
+                                    <span>Good</span>
+                                </button>
+                                <button class="mood-option" data-mood="okay">
+                                    <i class="fas fa-meh"></i>
+                                    <span>Okay</span>
+                                </button>
+                                <button class="mood-option" data-mood="bad">
+                                    <i class="fas fa-frown"></i>
+                                    <span>Not Great</span>
+                                </button>
+                                <button class="mood-option" data-mood="awful">
+                                    <i class="fas fa-sad-tear"></i>
+                                    <span>Really Bad</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="journal-actions">
+                            <button class="btn btn-primary" id="saveEntry">
+                                <i class="fas fa-save"></i> Save Entry
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="previous-entries">
+                        <h3>Previous Entries</h3>
+                        <div class="entries-list" id="entriesList">
+                            <!-- Journal entries will be dynamically added here -->
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Visualization Page -->
-        <section id="visualization" class="page">
+        <!-- Support Page -->
+        <section id="support" class="page">
             <div class="container">
-                <h2>Your Emotional Insights</h2>
-                <p class="page-subtitle">Understand your emotional patterns over time</p>
-                
-                <div class="filter-controls">
-                    <div class="filter-group">
-                        <label for="timeRange">Time Range:</label>
-                        <select id="timeRange">
-                            <option value="7">Last 7 days</option>
-                            <option value="30" selected>Last 30 days</option>
-                            <option value="90">Last 3 months</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="charts-container">
-                    <div class="chart-card full-width">
-                        <h3>Emotional Trend Over Time</h3>
-                        <canvas id="trendChart"></canvas>
+                <div class="support-container">
+                    <div class="support-header">
+                        <h2>Need to Talk to Someone?</h2>
+                        <p>You're not alone. Here are resources if you need support.</p>
                     </div>
                     
-                    <div class="chart-card">
-                        <h3>Mood Distribution</h3>
-                        <canvas id="moodDistributionChart"></canvas>
+                    <div class="support-options">
+                        <div class="support-card urgent">
+                            <div class="support-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <h3>Urgent Help</h3>
+                            <p>If you're in crisis or having thoughts of harming yourself, please reach out immediately.</p>
+                            <div class="support-contacts">
+                                <div class="contact">
+                                    <strong>National Suicide Prevention Lifeline</strong>
+                                    <p>Call or text 988</p>
+                                    <a href="tel:988" class="btn btn-primary">Call Now</a>
+                                </div>
+                                <div class="contact">
+                                    <strong>Crisis Text Line</strong>
+                                    <p>Text HOME to 741741</p>
+                                    <a href="sms:741741" class="btn btn-primary">Text Now</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="support-card">
+                            <div class="support-icon">
+                                <i class="fas fa-hands-helping"></i>
+                            </div>
+                            <h3>Professional Support</h3>
+                            <p>Connect with mental health professionals in your area.</p>
+                            <div class="support-links">
+                                <a href="#" class="support-link">
+                                    <i class="fas fa-search"></i>
+                                    Find a Therapist
+                                </a>
+                                <a href="#" class="support-link">
+                                    <i class="fas fa-laptop"></i>
+                                    Online Counseling
+                                </a>
+                                <a href="#" class="support-link">
+                                    <i class="fas fa-user-md"></i>
+                                    Psychiatrist Referral
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="support-card">
+                            <div class="support-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h3>Community Support</h3>
+                            <p>Connect with others who understand what you're going through.</p>
+                            <div class="support-links">
+                                <a href="#" class="support-link">
+                                    <i class="fas fa-comments"></i>
+                                    Support Groups
+                                </a>
+                                <a href="#" class="support-link">
+                                    <i class="fas fa-hands"></i>
+                                    Peer Support
+                                </a>
+                                <a href="#" class="support-link">
+                                    <i class="fas fa-book"></i>
+                                    Mental Health Resources
+                                </a>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="chart-card">
-                        <h3>Weekly Pattern</h3>
-                        <canvas id="weeklyPatternChart"></canvas>
+                    <div class="self-care">
+                        <h3>Self-Care Resources</h3>
+                        <div class="self-care-options">
+                            <div class="self-care-card">
+                                <i class="fas fa-wind"></i>
+                                <h4>Breathing Exercises</h4>
+                                <p>Simple techniques to calm your mind and body</p>
+                            </div>
+                            <div class="self-care-card">
+                                <i class="fas fa-spa"></i>
+                                <h4>Mindfulness</h4>
+                                <p>Guided meditations and mindfulness practices</p>
+                            </div>
+                            <div class="self-care-card">
+                                <i class="fas fa-book"></i>
+                                <h4>Mental Health Education</h4>
+                                <p>Learn about mental health and wellness</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -182,32 +246,24 @@
                                 <span class="slider"></span>
                             </label>
                         </div>
-                        <div class="toggle-container">
-                            <span>High Contrast Mode</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="contrastToggle">
-                                <span class="slider"></span>
-                            </label>
+                    </div>
+                    
+                    <div class="settings-card">
+                        <h3>Journal Preferences</h3>
+                        <div class="form-group">
+                            <label for="dailyReminder">Daily Journal Reminder</label>
+                            <select id="dailyReminder">
+                                <option value="none">No reminder</option>
+                                <option value="morning">Morning (8:00 AM)</option>
+                                <option value="evening" selected>Evening (8:00 PM)</option>
+                            </select>
                         </div>
                     </div>
                     
                     <div class="settings-card">
-                        <h3>Account Settings</h3>
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" id="username" value="peaceful_user">
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email</label>
-                            <input type="email" id="email" value="user@example.com">
-                        </div>
-                        <button class="btn btn-primary">Save Changes</button>
-                    </div>
-                    
-                    <div class="settings-card danger-zone">
-                        <h3>Danger Zone</h3>
-                        <p>Once you delete your account, there is no going back. Please be certain.</p>
-                        <button class="btn danger-btn" id="deleteAccountBtn">Delete Account</button>
+                        <h3>Privacy & Data</h3>
+                        <p>Your journal entries are stored locally on your device and are completely private.</p>
+                        <button class="btn btn-secondary" id="exportData">Export Journal Data</button>
                     </div>
                 </div>
             </div>
@@ -253,16 +309,18 @@
                         <label for="registerPassword">Password</label>
                         <input type="password" id="registerPassword" placeholder="Create a password">
                     </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" placeholder="Confirm your password">
-                    </div>
                     <button class="btn btn-primary full-width">Create Account</button>
                     <div class="form-footer">
                         <p>Already have an account? <a href="#" id="showLogin">Log in</a></p>
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Save Confirmation -->
+        <div id="saveConfirmation" class="confirmation-toast">
+            <i class="fas fa-check-circle"></i>
+            <span>Journal entry saved</span>
         </div>
     </main>
 
@@ -272,7 +330,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>Pages of Peace</h3>
-                    <p>Your companion in mental wellness and emotional clarity.</p>
+                    <p>Your simple, private mental health journal.</p>
                 </div>
                 <div class="footer-section">
                     <h4>Resources</h4>
@@ -287,7 +345,6 @@
                     <ul>
                         <li><a href="#">Contact Us</a></li>
                         <li><a href="#">Feedback</a></li>
-                        <li><a href="#">Community</a></li>
                     </ul>
                 </div>
             </div>
@@ -297,7 +354,6 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

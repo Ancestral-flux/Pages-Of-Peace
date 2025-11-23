@@ -4,29 +4,40 @@ const navLinks = document.querySelectorAll('.nav-link');
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
 const startJournalingBtn = document.getElementById('startJournaling');
-const newEntryBtn = document.getElementById('newEntryBtn');
-const analyzeBtn = document.getElementById('analyzeBtn');
+const saveEntryBtn = document.getElementById('saveEntry');
+const prevDateBtn = document.getElementById('prevDate');
+const nextDateBtn = document.getElementById('nextDate');
+const currentDateEl = document.getElementById('currentDate');
+const journalTextarea = document.querySelector('.journal-textarea');
+const moodOptions = document.querySelectorAll('.mood-option');
+const entriesList = document.getElementById('entriesList');
 const loginModal = document.getElementById('loginModal');
 const registerModal = document.getElementById('registerModal');
 const showRegister = document.getElementById('showRegister');
 const showLogin = document.getElementById('showLogin');
 const closeButtons = document.querySelectorAll('.close');
-const sentimentResult = document.getElementById('sentimentResult');
-const journalTextarea = document.querySelector('.journal-textarea');
+const saveConfirmation = document.getElementById('saveConfirmation');
 const darkModeToggle = document.getElementById('darkModeToggle');
-const deleteAccountBtn = document.getElementById('deleteAccountBtn');
-const timeRange = document.getElementById('timeRange');
+const exportDataBtn = document.getElementById('exportData');
+
+// State
+let currentDate = new Date();
+let selectedMood = null;
+let journalEntries = JSON.parse(localStorage.getItem('journalEntries')) || [];
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     // Set home page as active
     showPage('home');
     
-    // Initialize charts
-    initializeCharts();
+    // Load journal entries
+    loadJournalEntries();
     
     // Set up event listeners
     setupEventListeners();
+    
+    // Update date display
+    updateDateDisplay();
 });
 
 // Set up all event listeners
@@ -44,7 +55,6 @@ function setupEventListeners() {
     loginBtn.addEventListener('click', () => showModal('loginModal'));
     registerBtn.addEventListener('click', () => showModal('registerModal'));
     startJournalingBtn.addEventListener('click', () => showPage('journal'));
-    newEntryBtn.addEventListener('click', () => showPage('journal'));
     
     // Modal controls
     showRegister.addEventListener('click', (e) => {
@@ -74,14 +84,27 @@ function setupEventListeners() {
     });
     
     // Journal functionality
-    analyzeBtn.addEventListener('click', analyzeSentiment);
+    saveEntryBtn.addEventListener('click', saveJournalEntry);
+    prevDateBtn.addEventListener('click', goToPreviousDate);
+    nextDateBtn.addEventListener('click', goToNextDate);
+    
+    // Mood selection
+    moodOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove active class from all options
+            moodOptions.forEach(opt => opt.classList.remove('active'));
+            
+            // Add active class to clicked option
+            this.classList.add('active');
+            
+            // Store selected mood
+            selectedMood = this.getAttribute('data-mood');
+        });
+    });
     
     // Settings functionality
     darkModeToggle.addEventListener('change', toggleDarkMode);
-    deleteAccountBtn.addEventListener('click', confirmDeleteAccount);
-    
-    // Visualization filters
-    timeRange.addEventListener('change', updateCharts);
+    exportDataBtn.addEventListener('click', exportJournalData);
     
     // Auto-expand textarea
     journalTextarea.addEventListener('input', autoExpandTextarea);
@@ -95,9 +118,9 @@ function showPage(pageId) {
     
     document.getElementById(pageId).classList.add('active');
     
-    // Update charts when visualization page is shown
-    if (pageId === 'visualization') {
-        updateCharts();
+    // If journal page is shown, load entries for current date
+    if (pageId === 'journal') {
+        loadEntryForDate();
     }
 }
 
@@ -110,274 +133,183 @@ function hideModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
+// Date navigation
+function goToPreviousDate() {
+    currentDate.setDate(currentDate.getDate() - 1);
+    updateDateDisplay();
+    loadEntryForDate();
+}
+
+function goToNextDate() {
+    // Don't allow navigating to future dates
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (currentDate < tomorrow) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        updateDateDisplay();
+        loadEntryForDate();
+    }
+}
+
+function updateDateDisplay() {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (currentDate.toDateString() === today.toDateString()) {
+        currentDateEl.textContent = 'Today';
+    } else if (currentDate.toDateString() === yesterday.toDateString()) {
+        currentDateEl.textContent = 'Yesterday';
+    } else {
+        currentDateEl.textContent = currentDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    }
+    
+    // Disable next button if it's today or in the future
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    nextDateBtn.disabled = currentDate >= tomorrow;
+}
+
+// Load entry for current date
+function loadEntryForDate() {
+    const dateString = currentDate.toISOString().split('T')[0];
+    const existingEntry = journalEntries.find(entry => entry.date === dateString);
+    
+    // Reset form
+    journalTextarea.value = '';
+    moodOptions.forEach(opt => opt.classList.remove('active'));
+    selectedMood = null;
+    
+    // If entry exists, populate form
+    if (existingEntry) {
+        journalTextarea.value = existingEntry.content;
+        
+        if (existingEntry.mood) {
+            const moodOption = document.querySelector(`.mood-option[data-mood="${existingEntry.mood}"]`);
+            if (moodOption) {
+                moodOption.classList.add('active');
+                selectedMood = existingEntry.mood;
+            }
+        }
+    }
+    
+    // Auto-expand textarea
+    autoExpandTextarea.call(journalTextarea);
+}
+
+// Save journal entry
+function saveJournalEntry() {
+    const content = journalTextarea.value.trim();
+    const dateString = currentDate.toISOString().split('T')[0];
+    
+    // Find existing entry for this date
+    const existingEntryIndex = journalEntries.findIndex(entry => entry.date === dateString);
+    
+    if (existingEntryIndex !== -1) {
+        // Update existing entry
+        journalEntries[existingEntryIndex].content = content;
+        journalEntries[existingEntryIndex].mood = selectedMood;
+        journalEntries[existingEntryIndex].updated = new Date().toISOString();
+    } else {
+        // Create new entry
+        journalEntries.push({
+            date: dateString,
+            content: content,
+            mood: selectedMood,
+            created: new Date().toISOString(),
+            updated: new Date().toISOString()
+        });
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
+    
+    // Show confirmation
+    showSaveConfirmation();
+    
+    // Reload entries list
+    loadJournalEntries();
+}
+
+// Load journal entries for the list
+function loadJournalEntries() {
+    // Sort entries by date (newest first)
+    const sortedEntries = [...journalEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (sortedEntries.length === 0) {
+        entriesList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <h3>No entries yet</h3>
+                <p>Your journal entries will appear here once you start writing.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    entriesList.innerHTML = '';
+    
+    sortedEntries.forEach(entry => {
+        const entryDate = new Date(entry.date);
+        const dateDisplay = entryDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        const moodIcons = {
+            'amazing': 'fas fa-grin-stars',
+            'good': 'fas fa-smile',
+            'okay': 'fas fa-meh',
+            'bad': 'fas fa-frown',
+            'awful': 'fas fa-sad-tear'
+        };
+        
+        const moodIcon = entry.mood ? moodIcons[entry.mood] : 'fas fa-question';
+        const moodText = entry.mood ? entry.mood.charAt(0).toUpperCase() + entry.mood.slice(1) : 'Not set';
+        
+        const entryEl = document.createElement('div');
+        entryEl.className = 'entry-card';
+        entryEl.innerHTML = `
+            <div class="entry-header">
+                <div class="entry-date">${dateDisplay}</div>
+                <div class="entry-mood">
+                    <i class="${moodIcon}"></i>
+                    <span>${moodText}</span>
+                </div>
+            </div>
+            <div class="entry-content">${entry.content || '<em>No content</em>'}</div>
+        `;
+        
+        entriesList.appendChild(entryEl);
+    });
+}
+
+// Show save confirmation
+function showSaveConfirmation() {
+    saveConfirmation.classList.add('show');
+    
+    setTimeout(() => {
+        saveConfirmation.classList.remove('show');
+    }, 3000);
+}
+
 // Auto-expand textarea as user types
 function autoExpandTextarea() {
     this.style.height = 'auto';
     this.style.height = (this.scrollHeight) + 'px';
 }
 
-// Analyze sentiment of journal entry
-function analyzeSentiment() {
-    const text = journalTextarea.value.trim();
-    
-    if (!text) {
-        alert('Please write something before analyzing.');
-        return;
-    }
-    
-    // Show loading state
-    analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
-    analyzeBtn.disabled = true;
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-        // Simple sentiment analysis (in a real app, this would call an API)
-        const sentiment = getSentiment(text);
-        const sentimentScore = sentiment.score;
-        const sentimentLabel = sentiment.label;
-        
-        // Display result
-        displaySentimentResult(sentimentScore, sentimentLabel);
-        
-        // Reset button
-        analyzeBtn.innerHTML = 'Analyze Sentiment';
-        analyzeBtn.disabled = false;
-        
-        // In a real app, you would save the entry and sentiment to a database
-        console.log('Journal entry saved with sentiment:', sentimentLabel, sentimentScore);
-    }, 1500);
-}
-
-// Simple sentiment analysis (for demo purposes)
-function getSentiment(text) {
-    // This is a very basic implementation
-    // In a real application, you would use a proper sentiment analysis API
-    
-    const positiveWords = ['happy', 'good', 'great', 'excellent', 'joy', 'love', 'peace', 'calm', 'content', 'grateful', 'thankful', 'blessed', 'excited', 'hopeful', 'optimistic'];
-    const negativeWords = ['sad', 'bad', 'terrible', 'awful', 'hate', 'angry', 'anxious', 'worried', 'stressed', 'depressed', 'tired', 'exhausted', 'frustrated', 'disappointed', 'hurt'];
-    
-    const words = text.toLowerCase().split(/\s+/);
-    let positiveCount = 0;
-    let negativeCount = 0;
-    
-    words.forEach(word => {
-        if (positiveWords.includes(word)) positiveCount++;
-        if (negativeWords.includes(word)) negativeCount++;
-    });
-    
-    const total = positiveCount + negativeCount;
-    if (total === 0) {
-        return { score: 0.5, label: 'neutral' };
-    }
-    
-    const score = positiveCount / total;
-    
-    if (score > 0.7) {
-        return { score, label: 'positive' };
-    } else if (score < 0.3) {
-        return { score, label: 'negative' };
-    } else {
-        return { score, label: 'neutral' };
-    }
-}
-
-// Display sentiment analysis result
-function displaySentimentResult(score, label) {
-    sentimentResult.textContent = `Your entry feels mostly ${label} today. (Score: ${(score * 10).toFixed(1)}/10)`;
-    sentimentResult.className = 'sentiment-result';
-    
-    if (label === 'positive') {
-        sentimentResult.classList.add('sentiment-positive');
-    } else if (label === 'negative') {
-        sentimentResult.classList.add('sentiment-negative');
-    } else {
-        sentimentResult.classList.add('sentiment-neutral');
-    }
-    
-    sentimentResult.style.display = 'block';
-    
-    // Animate the result
-    sentimentResult.style.transform = 'translateY(-10px)';
-    sentimentResult.style.opacity = '0';
-    
-    setTimeout(() => {
-        sentimentResult.style.transition = 'all 0.3s ease';
-        sentimentResult.style.transform = 'translateY(0)';
-        sentimentResult.style.opacity = '1';
-    }, 10);
-}
-
-// Initialize charts
-function initializeCharts() {
-    // Mood Trend Chart
-    const moodCtx = document.getElementById('moodChart').getContext('2d');
-    window.moodChart = new Chart(moodCtx, {
-        type: 'line',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Mood Score',
-                data: [6, 7, 5, 8, 7, 9, 8],
-                borderColor: '#7CC7C4',
-                backgroundColor: 'rgba(124, 199, 196, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 10
-                }
-            }
-        }
-    });
-    
-    // Emotion Distribution Chart
-    const emotionCtx = document.getElementById('emotionChart').getContext('2d');
-    window.emotionChart = new Chart(emotionCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Happy', 'Calm', 'Anxious', 'Sad', 'Content'],
-            datasets: [{
-                data: [30, 25, 15, 10, 20],
-                backgroundColor: [
-                    '#A8D8F0',
-                    '#7CC7C4',
-                    '#F0F4F8',
-                    '#1E3A5F',
-                    '#DFF6FF'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-    
-    // Trend Chart for Visualization Page
-    const trendCtx = document.getElementById('trendChart').getContext('2d');
-    window.trendChart = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: generateDateLabels(30),
-            datasets: [{
-                label: 'Daily Mood',
-                data: generateRandomData(30, 3, 9),
-                borderColor: '#7CC7C4',
-                backgroundColor: 'rgba(124, 199, 196, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 10
-                }
-            }
-        }
-    });
-    
-    // Mood Distribution Chart
-    const moodDistCtx = document.getElementById('moodDistributionChart').getContext('2d');
-    window.moodDistributionChart = new Chart(moodDistCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Positive', 'Neutral', 'Negative'],
-            datasets: [{
-                data: [60, 25, 15],
-                backgroundColor: [
-                    '#A8D8F0',
-                    '#F0F4F8',
-                    '#1E3A5F'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-    
-    // Weekly Pattern Chart
-    const weeklyCtx = document.getElementById('weeklyPatternChart').getContext('2d');
-    window.weeklyPatternChart = new Chart(weeklyCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-            datasets: [{
-                label: 'Average Mood',
-                data: [6.2, 7.1, 6.8, 7.5, 6.9, 8.2, 7.8],
-                backgroundColor: '#7CC7C4'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 10
-                }
-            }
-        }
-    });
-}
-
-// Update charts based on filters
-function updateCharts() {
-    const days = parseInt(timeRange.value);
-    
-    // Update trend chart
-    window.trendChart.data.labels = generateDateLabels(days);
-    window.trendChart.data.datasets[0].data = generateRandomData(days, 3, 9);
-    window.trendChart.update();
-    
-    // In a real app, you would fetch new data from an API based on the selected time range
-    console.log('Updating charts for', days, 'days');
-}
-
-// Helper function to generate date labels
-function generateDateLabels(days) {
-    const labels = [];
-    const today = new Date();
-    
-    for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(today.getDate() - i);
-        labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    }
-    
-    return labels;
-}
-
-// Helper function to generate random data
-function generateRandomData(count, min, max) {
-    const data = [];
-    for (let i = 0; i < count; i++) {
-        data.push(Math.floor(Math.random() * (max - min + 1)) + min);
-    }
-    return data;
-}
-
 // Toggle dark mode
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
     
-    // In a real app, you would save this preference to local storage or a database
+    // In a real app, you would save this preference to local storage
     const isDarkMode = document.body.classList.contains('dark-mode');
     console.log('Dark mode:', isDarkMode);
     
@@ -397,13 +329,26 @@ function toggleDarkMode() {
     }
 }
 
-// Confirm account deletion
-function confirmDeleteAccount() {
-    const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone.');
-    
-    if (confirmed) {
-        // In a real app, you would make an API call to delete the account
-        alert('Account deletion requested. This would typically require additional confirmation in a production app.');
-        console.log('Account deletion requested');
+// Export journal data
+function exportJournalData() {
+    if (journalEntries.length === 0) {
+        alert('No journal entries to export.');
+        return;
     }
+    
+    // Create a JSON string of the journal entries
+    const dataStr = JSON.stringify(journalEntries, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    
+    // Create a download link
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'pages-of-peace-journal-export.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert('Journal data exported successfully!');
 }
